@@ -1,6 +1,5 @@
 class Tweet
-  attr_accessor :message, :username
-  attr_reader :id
+  attr_accessor :message, :username, :id
 
   DATABASE = DB[:conn]
 
@@ -26,6 +25,17 @@ class Tweet
 
   def save
     ## Fire a sql statement to create a new tweet
+    ## Should create a new tweet if it doesn't exist yet
+    if persisted?
+      # update the tweet instance in the table
+      update_tweet_message_in_database
+    else
+      # self.id doesn't exist then insert new tweet into database
+      insert_tweet_into_database
+    end
+  end
+
+  def insert_tweet_into_database
     sql = <<-SQL
     INSERT INTO tweets (message, username)
     VALUES (?, ?)
@@ -40,6 +50,14 @@ class Tweet
     @id = DATABASE.execute(last_row_sql).first['id']
     self
   end
+
+  def update_tweet_message_in_database
+    sql = <<-SQL
+    UPDATE tweets SET message = (?) WHERE id = (?)
+    SQL
+    DATABASE.execute(sql, self.message, self.id)
+  end
+
 
   def persisted?
     !!self.id
